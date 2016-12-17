@@ -17,6 +17,7 @@ public class Request {
     private String jsonString;
 
     private String query;
+    private boolean successful;
 
     public Request(Table table) {
         switch(table) {
@@ -31,8 +32,7 @@ public class Request {
     }
 
     public void sendRequest() throws Exception {
-        jsonString = "{ " + jsonString + "}";
-        //System.out.println(jsonString);
+        jsonString = "{" + jsonString + "}";
         URL url = new URL(baseURL + "?flag=" + tableInitial);
         URLConnection connection = url.openConnection();
         HttpURLConnection http = (HttpURLConnection)connection;
@@ -49,19 +49,37 @@ public class Request {
             os.write(out);
         }
 
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(
-                        connection.getInputStream()));
-        String inputLine;
-        if((inputLine = in.readLine()) != null)
-            System.out.println(inputLine);
-        in.close();
+        try {
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(
+                            connection.getInputStream()));
+
+            String inputLine;
+            if ((inputLine = in.readLine()) != null) {
+                String[] inputLines = inputLine.split("<br>");
+                query = inputLines[0];
+                successful = inputLines[1].equals("success");
+            }
+            in.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void addParameter(String name, Object value) {
         if(!jsonString.equals(""))
             jsonString += ", ";
-        jsonString += "\"" + name + "\"" + ":" + String.valueOf(value);
+        jsonString += "\"" + name + "\"" + ":";
+
+        if(value instanceof Number)
+            jsonString += String.valueOf(value);
+        else
+            jsonString += "\"" + String.valueOf(value) + "\"";
+    }
+
+    public void seeRequest() {
+        System.out.println(jsonString);
     }
 
 }
